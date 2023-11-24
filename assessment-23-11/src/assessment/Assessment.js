@@ -13,17 +13,7 @@ let MEDICINE_DATA_FOR_UPDATE =
             "medicine_name": "testmedzaheer007",
             "power": "500"
         },
-        {
-            "prescription_id": 1579130,
-            "remarks": "",
-            "id": 2882,
-            "medicine_taken": false,
-            "created_at": "2023-11-21T18:30:00.000Z",
-            "slot_time": "07:55 am",
-            "dosage": "1",
-            "medicine_name": "testmedzaheer007",
-            "power": "500"
-        },
+       
         {
             "prescription_id": 1579130,
             "remarks": "",
@@ -117,7 +107,7 @@ let MEDICINE_DATA_FOR_UPDATE =
             "remarks": "",
             "id": 2885,
             "medicine_taken": false,
-            "created_at": "2023-12-19T18:30:00.000Z",
+            "created_at": "2023-11-23T18:30:00.000Z",
             "slot_time": "07:55 am",
             "dosage": "1",
             "medicine_name": "testmedzaheer007",
@@ -128,8 +118,8 @@ let MEDICINE_DATA_FOR_UPDATE =
             "remarks": "",
             "id": 2889,
             "medicine_taken": false,
-            "created_at": "2023-12-19T18:30:00.000Z",
-            "slot_time": "09:55 pm",
+            "created_at": "2023-11-23T18:30:00.000Z",
+            "slot_time": "09:55 am",
             "dosage": "1",
             "medicine_name": "testmedzaheer006",
             "power": "500"
@@ -139,12 +129,22 @@ let MEDICINE_DATA_FOR_UPDATE =
             "remarks": "",
             "id": 2893,
             "medicine_taken": false,
-            "created_at": "2023-12-19T18:30:00.000Z",
+            "created_at": "2023-11-23T18:30:00.000Z",
             "slot_time": "07:55 am",
             "dosage": "1",
             "medicine_name": "testmedzaheer006",
             "power": "500"
-        }
+        }, {
+            "prescription_id": 1579130,
+            "remarks": "",
+            "id": 2882,
+            "medicine_taken": false,
+            "created_at": "2023-11-23T18:30:00.000Z",
+            "slot_time": "06:55 am",
+            "dosage": "1",
+            "medicine_name": "testmedzaheer007",
+            "power": "500"
+        },
     ]
 
 
@@ -158,7 +158,7 @@ function Assessment() {
 useEffect(() => {
     const dataManageDatewise = {};
 
-    MEDICINE_DATA_FOR_UPDATE.forEach((medicineObj) => {
+    MEDICINE_DATA_FOR_UPDATE.sort((a,b)=>new Date(a.created_at) - new Date(b.created_at)).forEach((medicineObj) => {
         const dateKey = new Date(medicineObj.created_at).toDateString();
         const slotTime = medicineObj.slot_time;
 
@@ -174,8 +174,8 @@ useEffect(() => {
     });
 
     setMedicineData(dataManageDatewise);
+console.log(dataManageDatewise)
 
-    // Activate today's date by default
     const todayDateKey = new Date().toDateString();
     setSelectedDate(todayDateKey);
 }, []);
@@ -184,6 +184,60 @@ useEffect(() => {
     function handleToggleClick(date) {
         setSelectedDate(date);
     }
+
+    function timeEventFinder(timeOn12Hour) {
+        let time;
+         if(timeOn12Hour.includes('pm')) {
+            let a = timeOn12Hour.split(':')
+            a[0] = Number(a[0]) + 12
+            time = a.join(':').split(' ')[0]
+        } else{
+            time = timeOn12Hour.split(' ')[0]
+        }
+        // console.log(time)
+        // console.log(typeof time)
+
+        if (time >= '06:00' && time < '13:00') {
+            return 'Good Morning ☀️';
+        } else if (time >= '13:00' && time < '17:00') {
+            return 'Good noon 🕛';
+        } else if (time >= '17:00' && time < '20:00') {
+            return 'Good evening 🌆';
+        } else if (time >= '20:00' || time < '06:00') {
+            return 'Good night 🌙';
+        }
+    }
+    
+    function isExpired(date,slot_time) {
+        // console.log(date)
+        // console.log()
+        let slot_time_array = slot_time && Object.values(slot_time).flat().map(item=>item.slot_time)
+        let new_format_time = []
+
+        slot_time_array && slot_time_array.forEach(tm => {
+            if(tm.includes('pm')) {
+                let a = tm.split(':')
+                a[0] = Number(a[0]) + 12
+                new_format_time.push(a.join(':').split(' ')[0])
+            } else{
+                new_format_time.push(tm.split(' ')[0])
+            }
+        })
+
+        // console.log(new Date(date),new Date())
+        if(new Date(date).toDateString() == new Date().toDateString()){
+            let current_time =`${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')}`
+            // console.log(current_time)
+            let anyMissing=  new_format_time.some(time => time > current_time)
+            // console.log(new_format_time, current_time, anyMissing)
+            // console.log('if')
+            return anyMissing
+        }else {
+            // console.log('else')
+            return new Date(date) < new Date()
+        }
+    }
+    
 
     return (
         <div>
@@ -194,7 +248,7 @@ useEffect(() => {
                 onToggleClick={handleToggleClick}
                 date={date}
                 key={index}
-                expired={new Date(date) < new Date()}
+                expired={isExpired(date,medicineData[selectedDate])}
               />
             ))}
           </div>
@@ -204,7 +258,7 @@ useEffect(() => {
                 <div className='m-2 rounded px-6 py-2 w-[650px] flex bg-green-700' key={slotTime}>
                   <div className='w-[625px]'>
                     <div className='flex justify-between'>
-                      <h1>{slotTime}</h1>
+                      <h1>{timeEventFinder(slotTime)}</h1>
                       <p>{slotTime}</p>
                     </div>
                     <h1 className='text-xl text-start'>
@@ -213,14 +267,14 @@ useEffect(() => {
                       ))}
                     </h1>
                   </div>
-                  {new Date(selectedDate) < new Date() && <div className=' bg-red-800 rounded ml-1 w-[30px] h-[50px] '>^</div>}
+                  {new Date(selectedDate) < new Date() && <div className='bg-red-800 rounded ml-1 w-[30px] h-[50px] '>^</div>}
                 </div>
               ))}
             </div>
           )}
         </div>
       );
-                      }
+}
 
 export default Assessment;
 
@@ -236,4 +290,4 @@ function DayWiseToggleBtn({ date, onToggleClick, selectedDate, expired }) {
             <div className={`rounded w-[10px] h-[10px] ${expired ? 'bg-red-600' : 'bg-green-600'} mx-auto`}></div>
         </div>
     );
-    }
+}
